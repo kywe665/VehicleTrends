@@ -13,18 +13,29 @@
 
   function testRun() { 
     var testMake = "200002038"; //test on Acura
+    var testNiceMake = "acura";
     queueQuery(modelsTCO(testMake), function(data){
-      $.each( data, function(key, model) { //loop through each model
+      console.log(data);
+      $.each( data.models, function(key, model) { //loop through each model
         log("looping model: "+model);
+        //console.log(model);
         $.each(model.years, function(yearType, yearsArr) { //loop through each yearType
           log("looping yearType: "+yearType);
-          yearsArr.forEach(function(year){ //loop through each year
+          $.each(yearsArr, function(yearIndex, year){ //loop through each year
             log("looping year: "+year);
-            console.log(stylesTCO(niceMake, model.nicemodel, year, model.submodel));
+            queueQuery(stylesTCO(testNiceMake, model.nicemodel, year, model.submodel), function(styleData){
+              console.log("got styleData for "+year+key, styleData);
+              data.models[key].years[yearType][yearIndex].styles = styleData;
+            });
           });
         });
       });
+      console.log("IT IS FINISHED", data);
     });
+  }
+
+  function fakeQuery(blah, callback) {
+    callback("I got this: " +blah);
   }
 
   function testQuery() {
