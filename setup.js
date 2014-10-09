@@ -14,8 +14,11 @@
   function testRun() { 
     var testMake = "200002038"; //test on Acura
     var testNiceMake = "acura";
+    masterObj[testNiceMake] = {};
     queueQuery(modelsTCO(testMake), function(data){
       console.log(data);
+      masterObj[testNiceMake].models = data.models;
+      console.log("master+models "+testNiceMake, masterObj);
       $.each( data.models, function(key, model) { //loop through each model
         log("looping model: "+model);
         //console.log(model);
@@ -23,14 +26,18 @@
           log("looping yearType: "+yearType);
           $.each(yearsArr, function(yearIndex, year){ //loop through each year
             log("looping year: "+year);
+            masterObj[testNiceMake].models[key].years[yearType] = {}; //setup the master obj
+            masterObj[testNiceMake].models[key].years[yearType][year] = {};
             queueQuery(stylesTCO(testNiceMake, model.nicemodel, year, model.submodel), function(styleData){
-              console.log("got styleData for "+year+key, styleData);
-              data.models[key].years[yearType][yearIndex].styles = styleData;
+              //console.log("master w/ models", masterObj);
+              //console.log(masterObj[testNiceMake].models[key].years);
+              log("received style data for "+testNiceMake+key+year);
+              masterObj[testNiceMake].models[key].years[yearType][year] = styleData;
+              console.log("master+style "+year+key, masterObj);
             });
           });
         });
       });
-      console.log("IT IS FINISHED", data);
     });
   }
 
@@ -80,7 +87,7 @@
         log(queriesQ.length + " queries in queue");
         executeQuery(queriesQ.pop()); //dequeue and execute
       }
-    }, 500);
+    }, 520);
   }
 
   function queueQuery(url, callback) { //only simple GETs with url
