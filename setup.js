@@ -12,7 +12,7 @@
   testRun();
 
   function testRun() { 
-    var testMake = "200002038"; //test on Acura
+    var testMake = "200002038"; //test on Acura TODO query Makes and save
     var testNiceMake = "acura";
     masterObj[testNiceMake] = {};
     queueQuery(modelsTCO(testMake), function(data){
@@ -29,11 +29,19 @@
             masterObj[testNiceMake].models[key].years[yearType] = {}; //setup the master obj
             masterObj[testNiceMake].models[key].years[yearType][year] = {};
             queueQuery(stylesTCO(testNiceMake, model.nicemodel, year, model.submodel), function(styleData){
-              //console.log("master w/ models", masterObj);
-              //console.log(masterObj[testNiceMake].models[key].years);
               log("received style data for "+testNiceMake+key+year);
-              masterObj[testNiceMake].models[key].years[yearType][year] = styleData;
+              masterObj[testNiceMake].models[key].years[yearType][year] = styleData; //save styles
               console.log("master+style "+year+key, masterObj);
+              $.each(styleData.styles, function(styleName, styleObj) {
+                console.log("adding tco query ", styleObj);
+                queueQuery(getTCO(styleObj.id, '98053', 'WA', isNew(yearType)), function(tcoData){
+                  console.log("gotTCO", tcoData);
+                  masterObj[testNiceMake].models[key].years[yearType][year].styles[styleName].tco = tcoData;
+                  console.log("master+tco ", masterObj);
+                });
+              });
+              
+              //TODO query TCO and save
             });
           });
         });
@@ -78,7 +86,17 @@
     return v1Url+"/tco/getstyleswithtcodatabysubmodel"+params+"&make="+makeNice+"&model="+modelNice+"&year="+year+"&submodel="+submodel;
   }
   function getTCO(styleId, zip, state, isNew){
+    if(isNew){
+      return mainUrl+"/tco/v1/details/allnewtcobystyleidzipandstate/"+styleId+"/"+zip+"/"+state+params;
+    }
     return mainUrl+"/tco/v1/details/allusedtcobystyleidzipandstate/"+styleId+"/"+zip+"/"+state+params;
+  }
+
+  function isNew(type){
+    if (type === 'NEW'){
+      return true;
+    }
+    return false;
   }
 
   function startQueryThrottling() {
@@ -87,7 +105,7 @@
         log(queriesQ.length + " queries in queue");
         executeQuery(queriesQ.pop()); //dequeue and execute
       }
-    }, 520);
+    }, 550);
   }
 
   function queueQuery(url, callback) { //only simple GETs with url
