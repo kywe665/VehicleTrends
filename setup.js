@@ -3,15 +3,19 @@
   var params = "?fmt=json&api_key=prdnysqjp9tq5fgusfm44rb8";
   var v1Url = "https://api.edmunds.com/v1/api";
   var mainUrl = "https://api.edmunds.com/api";
+  var dbUrl = "http://localhost:5984/vehicle-trends";
   var queriesQ = []; // all GETs
   var queryId = 0;
   var isDebug = true;
+  var writeTimeout; //timeout for db write
+  var commitWait; //interval to check queue before write
+  var mainThrottle; //query throttle
   var masterObj = {};
 
-  startQueryThrottling();
-  testRun();
+  initQueue();
+  /*Need to queue queries then start throttle. When queue=0 save data, stop throttle. reset after 24 hrs*/
 
-  function testRun() { 
+  function initQueue() { 
     var testMake = "200002038"; //test on Acura TODO query Makes and save
     var testNiceMake = "acura";
     masterObj[testNiceMake] = {};
@@ -21,7 +25,6 @@
       console.log("master+models "+testNiceMake, masterObj);
       $.each( data.models, function(key, model) { //loop through each model
         log("looping model: "+model);
-        //console.log(model);
         $.each(model.years, function(yearType, yearsArr) { //loop through each yearType
           log("looping yearType: "+yearType);
           $.each(yearsArr, function(yearIndex, year){ //loop through each year
@@ -40,13 +43,12 @@
                   console.log("master+tco ", masterObj);
                 });
               });
-              
-              //TODO query TCO and save
             });
           });
         });
       });
     });
+    startQueryThrottling();
   }
 
   function fakeQuery(blah, callback) {
@@ -59,9 +61,6 @@
       console.log(data);
     }, "json");
   }
-  
-  //makes = data.makes["Acura"].id .name .niceName
-  //models = data.models["ilx:Hybrid"].id .link .model .name .nicemodel .nicesubmodel .submodel .years["NEW"] ["NEW_USED"] ["USED"][2011,2012,etc]
 
   function executeQuery(qObj) {
     log("starting query "+qObj.id);
@@ -73,7 +72,6 @@
       .error(function(jqXHR, textStatus, errorThrown) { 
         log("Query "+qObj.id+" FAILED: "+jqXHR.statusText, true);
       });
-    //remove from stack
   }
 
   function allMakesTCO() {
@@ -100,12 +98,55 @@
   }
 
   function startQueryThrottling() {
-    setInterval(function(){
+    if (queriesQ.length === 0) {
+      return; //do not start if there are no queries
+    }
+    mainThrottle = setInterval(function(){
       if(queriesQ.length > 0){
         log(queriesQ.length + " queries in queue");
         executeQuery(queriesQ.pop()); //dequeue and execute
       }
-    }, 550);
+      else {
+        log("QUEUE EMPTY; 2 MIN UNTIL DATA COMMIT;");
+        enterCommitWaitLoop();
+      }
+    }, 550); // Max queries is 2ps
+  }
+  
+  function enterCommitWaitLoop() {
+    clearInterval(mainThrottle);
+    writeTimeout = setTimeout(function(){ //wait 2 min just in case queries are slow.
+      clearInterval(commitWait); //no need to check anymore
+      writeToDb();
+    }, 2*60*1000);
+    commitWait = setInterval(function(){
+      if(queriesQ.length > 0){
+        console.log("LATE QUERY FOUND! CANCEL COMMIT!");
+        clearTimeout(writeTimeout);
+        clearInterval(commitWait);
+        startQueryThrottling();
+      }
+    },200);
+  }
+
+  function writeToDb() {
+    //TODO reschedule for tomorrow refresh
+    console.log("writing to db ", masterObj); //write to db
+    jQuery.support.cors = true;
+    $.ajax({
+      type: 'POST',
+      contentType: 'application/json',
+      crossDomain: true,
+      url: dbUrl,
+      data: JSON.stringify(masterObj),
+      success: function(result) {
+        console.log("finished write", result);
+      }
+    });
+  }
+
+  function purgeDb() {
+    //TODO purge db once per day
   }
 
   function queueQuery(url, callback) { //only simple GETs with url
@@ -121,42 +162,6 @@
     if(isDebug || override){
       console.log(msg);
     }
-  }
-
-/**************************************************************
-*************   TESTS   ***************************************
-**************************************************************/
-
-  //Test the queue and throttle with netbug on :2134
-  function unitTestThrottle() {
-    queueQuery("http://localhost:2134?q=1", function(data) {
-      log("I got 1");
-    });
-
-    queueQuery("http://localhost:2134?q=2", function(data) {
-      log("I got 2");
-    });  
-
-    queueQuery("http://localhost:2134?q=foo3", function(data) {
-      log("I got foo3");
-      queueQuery("http://localhost:2134?q=bar4.5", function(data) {
-        log("I got bar4.5");
-      });
-    });
-    queueQuery("http://localhost:2134?q=5", function(data) {
-      log("I got 5");
-    });
-    queueQuery("http://localhost:2134?q=6", function(data) {
-      log("I got 6");
-    });
-    queueQuery("http://localhost:2134?q=7", function(data) {
-      log("I got 7");
-    });
-    queueQuery("http://localhost:2134?q=8", function(data) {
-      log("I got 8");
-    });
-
-    startQueryThrottling();
   }
 
 })();
