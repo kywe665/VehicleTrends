@@ -13,34 +13,36 @@
   var masterObj = {};
 
   initQueue();
-  /*Need to queue queries then start throttle. When queue=0 save data, stop throttle. reset after 24 hrs*/
 
   function initQueue() { 
-    var testMake = "200002038"; //test on Acura TODO query Makes and save
-    var testNiceMake = "acura";
-    masterObj[testNiceMake] = {};
-    queueQuery(modelsTCO(testMake), function(data){
-      console.log(data);
-      masterObj[testNiceMake].models = data.models;
-      console.log("master+models "+testNiceMake, masterObj);
-      $.each( data.models, function(key, model) { //loop through each model
-        log("looping model: "+model);
-        $.each(model.years, function(yearType, yearsArr) { //loop through each yearType
-          log("looping yearType: "+yearType);
-          $.each(yearsArr, function(yearIndex, year){ //loop through each year
-            log("looping year: "+year);
-            masterObj[testNiceMake].models[key].years[yearType] = {}; //setup the master obj
-            masterObj[testNiceMake].models[key].years[yearType][year] = {};
-            queueQuery(stylesTCO(testNiceMake, model.nicemodel, year, model.submodel), function(styleData){
-              log("received style data for "+testNiceMake+key+year);
-              masterObj[testNiceMake].models[key].years[yearType][year] = styleData; //save styles
-              console.log("master+style "+year+key, masterObj);
-              $.each(styleData.styles, function(styleName, styleObj) {
-                console.log("adding tco query ", styleObj);
-                queueQuery(getTCO(styleObj.id, '98053', 'WA', isNew(yearType)), function(tcoData){
-                  console.log("gotTCO", tcoData);
-                  masterObj[testNiceMake].models[key].years[yearType][year].styles[styleName].tco = tcoData;
-                  console.log("master+tco ", masterObj);
+    queueQuery(allMakesTCO(), function(makeData){
+      console.log(makeData);
+      masterObj = makeData; //setup master
+      $.each( makeData.makes, function(make, makeObj) { //loop through each make
+        queueQuery(modelsTCO(makeObj.id), function(data){
+          console.log(data);
+          masterObj.makes[make].models = data.models;
+          console.log("master+models "+make, masterObj);
+          $.each( data.models, function(key, model) { //loop through each model
+            log("looping model: "+model);
+            $.each(model.years, function(yearType, yearsArr) { //loop through each yearType
+              log("looping yearType: "+yearType);
+              $.each(yearsArr, function(yearIndex, year){ //loop through each year
+                log("looping year: "+year);
+                masterObj.makes[make].models[key].years[yearType] = {}; //setup the master obj
+                masterObj.makes[make].models[key].years[yearType][year] = {};
+                queueQuery(stylesTCO(makeObj.niceName, model.nicemodel, year, model.submodel), function(styleData){
+                  log("received style data for "+make+key+year);
+                  masterObj.makes[make].models[key].years[yearType][year] = styleData; //save styles
+                  console.log("master+style "+year+key, masterObj);
+                  $.each(styleData.styles, function(styleName, styleObj) {
+                    console.log("adding tco query ", styleObj);
+                    queueQuery(getTCO(styleObj.id, '98053', 'WA', isNew(yearType)), function(tcoData){
+                      console.log("gotTCO", tcoData);
+                      masterObj.makes[make].models[key].years[yearType][year].styles[styleName].tco = tcoData;
+                      console.log("master+tco ", masterObj);
+                    });
+                  });
                 });
               });
             });
