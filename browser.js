@@ -32,18 +32,32 @@
   
   $( document ).ready(function() {
     console.log( "ready!" );
-    setupGraphs();
+    setupElems();
     bindEvents();
   });
-  function setupGraphs(){
+  function setupElems(){
     var ctx = $("#myChart").get(0).getContext("2d");
-    myLineChart = new Chart(ctx).Line(lineData, lineOptions);
-    $("#combobox").combobox();
+    myLineChart = new Chart(ctx).Line(lineData, lineOptions); //chart
+    getMakes();
+    $("#make-combobox").combobox(); //comboboxes
   }
   function bindEvents(){
     $('.update').on('click', function(){
       myLineChart.datasets[0].points[2].value = 50;
       myLineChart.update();
     });
+  }
+
+  function getMakes(){
+    $.get("http://localhost:5984/vehicle-trends/_design/temp/_view/temp")
+      .success(function(data){
+        data = JSON.parse(data).rows[1].value; //temp placeholder
+        console.log("success", data);
+        
+      })
+      .error(function(jqXHR, textStatus, errorThrown) { 
+        console.log("Query FAILED: "+jqXHR.statusText);
+      });  
+//  $.get("/database/_design/application/_view/viewname")
   }
 })();
