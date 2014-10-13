@@ -12,7 +12,7 @@
   var mainThrottle; //query throttle
   var masterObj = {};
 
-  initQueue();
+  //initQueue();
 
   function initQueue() { 
     queueQuery(allMakesTCO(), function(makeData){
