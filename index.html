@@ -4,20 +4,50 @@
   <meta charset="utf-8" />
   <title>VehicleTrends</title>
   <script type="text/javascript" src="http://code.jquery.com/jquery-latest.min.js"></script>
+  <script src="//code.jquery.com/jquery-1.10.2.js"></script>
+  <script src="//code.jquery.com/ui/1.11.1/jquery-ui.js"></script>
+  <script type="text/javascript" src="./combobox.js"></script>
   <script type="text/javascript" src="./setup.js"></script>
   <script type="text/javascript" src="./charts/Chart.js"></script>
   <script type="text/javascript" src="./browser.js"></script>
   <!--[if lt IE 9]>
     <script src="http://html5shiv.googlecode.com/svn/trunk/html5.js"></script>
   <![endif]-->
-  <style type="text/css">
-    header, section, footer, aside, nav, article, figure, audio, video, canvas  { display:block; }
-  </style>
+  <link rel="stylesheet" href="//code.jquery.com/ui/1.11.1/themes/smoothness/jquery-ui.css">
+  <link rel="stylesheet" href="./style.css">
 </head>
 <body>
   <div id="wrapper">
     <button class="update" name="update">click</button>
     <canvas id="myChart" width="800" height="200">canvas</canvas>
+    <div class="ui-widget">
+      <label>Your preferred programming language: </label>
+      <select id="combobox">
+        <option value="">Select one...</option>
+        <option value="ActionScript">ActionScript</option>
+        <option value="AppleScript">AppleScript</option>
+        <option value="Asp">Asp</option>
+        <option value="BASIC">BASIC</option>
+        <option value="C">C</option>
+        <option value="C++">C++</option>
+        <option value="Clojure">Clojure</option>
+        <option value="COBOL">COBOL</option>
+        <option value="ColdFusion">ColdFusion</option>
+        <option value="Erlang">Erlang</option>
+        <option value="Fortran">Fortran</option>
+        <option value="Groovy">Groovy</option>
+        <option value="Haskell">Haskell</option>
+        <option value="Java">Java</option>
+        <option value="JavaScript">JavaScript</option>
+        <option value="Lisp">Lisp</option>
+        <option value="Perl">Perl</option>
+        <option value="PHP">PHP</option>
+        <option value="Python">Python</option>
+        <option value="Ruby">Ruby</option>
+        <option value="Scala">Scala</option>
+        <option value="Scheme">Scheme</option>
+      </select>
+    </div>
   </div>
 </body>
 </html>

@@ -38,6 +38,7 @@
   function setupGraphs(){
     var ctx = $("#myChart").get(0).getContext("2d");
     myLineChart = new Chart(ctx).Line(lineData, lineOptions);
+    $("#combobox").combobox();
   }
   function bindEvents(){
     $('.update').on('click', function(){
