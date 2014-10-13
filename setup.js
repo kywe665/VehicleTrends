@@ -18,29 +18,43 @@
     queueQuery(allMakesTCO(), function(makeData){
       console.log(makeData);
       masterObj = makeData; //setup master
-      $.each( makeData.makes, function(make, makeObj) { //loop through each make
+      //$.each( makeData.makes, function(make, makeObj) { //loop through each make
+        var make = 'Acura';
+        var makeObj = makeData.makes[make];
+        masterObj.makes[make].depAggs = {};
+        masterObj.makes[make].depAggs.count = 0;
+        masterObj.makes[make].depAggs.values = [0,0,0,0,0];
         queueQuery(modelsTCO(makeObj.id), function(data){
           console.log(data);
           masterObj.makes[make].models = data.models;
           console.log("master+models "+make, masterObj);
           $.each( data.models, function(key, model) { //loop through each model
-            log("looping model: "+model);
+            log("looping model: "+key);
+            masterObj.makes[make].models[key].depAggs = {};
+            masterObj.makes[make].models[key].depAggs.count = 0;
+            masterObj.makes[make].models[key].depAggs.values = [0,0,0,0,0];
             $.each(model.years, function(yearType, yearsArr) { //loop through each yearType
               log("looping yearType: "+yearType);
+              masterObj.makes[make].models[key].years[yearType] = {}; //setup the master obj
               $.each(yearsArr, function(yearIndex, year){ //loop through each year
-                log("looping year: "+year);
-                masterObj.makes[make].models[key].years[yearType] = {}; //setup the master obj
                 masterObj.makes[make].models[key].years[yearType][year] = {};
+                masterObj.makes[make].models[key].years[yearType][year].depAggs = {};
+                masterObj.makes[make].models[key].years[yearType][year].depAggs.count = 0;
+                masterObj.makes[make].models[key].years[yearType][year].depAggs.values = [0,0,0,0,0];
+                log("looping year: "+year, masterObj);
                 queueQuery(stylesTCO(makeObj.niceName, model.nicemodel, year, model.submodel), function(styleData){
                   log("received style data for "+make+key+year);
-                  masterObj.makes[make].models[key].years[yearType][year] = styleData; //save styles
+                  var temp = masterObj.makes[make].models[key].years[yearType][year];
+                  console.log("doing", temp, styleData);
+                  masterObj.makes[make].models[key].years[yearType][year].styles = styleData.styles; //save styles
                   console.log("master+style "+year+key, masterObj);
-                  $.each(styleData.styles, function(styleName, styleObj) {
+                  $.each(styleData.styles, function(styleName, styleObj) { //loop through each style
                     console.log("adding tco query ", styleObj);
                     queueQuery(getTCO(styleObj.id, '98053', 'WA', isNew(yearType)), function(tcoData){
                       console.log("gotTCO", tcoData);
                       masterObj.makes[make].models[key].years[yearType][year].styles[styleName].tco = tcoData;
                       console.log("master+tco ", masterObj);
+                      buildAggregates(make, key, yearType, year, styleName, tcoData);
                     });
                   });
                 });
@@ -48,19 +62,40 @@
             });
           });
         });
-      });
+      //});
     });
     startQueryThrottling();
+  }
+
+  function buildAggregates(make, model, yearType, year, styleName, tcoData) {
+    for(var i = 0; i < 5; i++){
+      //agg the years
+       masterObj.makes[make].models[model].years[yearType][year].depAggs.values[i] += tcoData.depreciation.values[i];
+      //agg the models
+       masterObj.makes[make].models[model].depAggs.values[i] += tcoData.depreciation.values[i];
+      //agg the makes
+       masterObj.makes[make].depAggs.values[i] += tcoData.depreciation.values[i];
+    }
+    console.log("aggregating "+make+model+year);
+    masterObj.makes[make].models[model].years[yearType][year].depAggs.count++;
+    masterObj.makes[make].models[model].depAggs.count++;
+    masterObj.makes[make].depAggs.count++;
+    console.log("built AGGs for: "+make+model+year+styleName, masterObj);
   }
 
   function fakeQuery(blah, callback) {
     callback("I got this: " +blah);
   }
-
+///////////////////////////////////////////////////////////////////////
+  //testQuery();
+/////////////////////////////////////////////////////////////////////////
   function testQuery() {
-    var testMake = "200002038";
-    $.get(modelsTCO(testMake), function( data ) {
-      console.log(data);
+    var testId = "101363579";
+    $.get(getTCO(testId, '10065', 'WA', false), function( data ) {
+      console.log('10065', data);
+    }, "json");
+    $.get(getTCO(testId, '48208', 'WA', false), function( data ) {
+      console.log('48208', data);
     }, "json");
   }
 
