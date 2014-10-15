@@ -13,3 +13,8 @@
   margin: 0;
   padding: 5px 10px;
 }
+.selection-group{
+  width: 410px;
+  height: 500px;
+  float: left;
+}

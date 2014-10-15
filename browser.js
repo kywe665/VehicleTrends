@@ -6,24 +6,34 @@
     labels: [now.getFullYear()+1, now.getFullYear()+2, now.getFullYear()+3, now.getFullYear()+4, now.getFullYear()+5],
     datasets: [
         {
-            label: "Make 1",
+            label: "Pick 1",
             fillColor: "rgba(220,220,220,0)",
-            strokeColor: "rgba(220,220,220,1)",
-            pointColor: "rgba(220,220,220,1)",
+            strokeColor: "rgba(210,0,0,1)",
+            pointColor: "rgba(255,0,0,1)",
             pointStrokeColor: "#fff",
             pointHighlightFill: "#fff",
-            pointHighlightStroke: "rgba(220,220,220,1)",
-            data: [2650, 1590, 1080, 810, 506]
+            pointHighlightStroke: "rgba(255,0,0,1)",
+            data: [0, 0, 0, 0, 0]
         },
         {
-            label: "Make 2",
+            label: "Pick 2",
             fillColor: "rgba(151,187,205,0)",
-            strokeColor: "rgba(220,220,220,1)",
-            pointColor: "rgba(220,220,220,1)",
+            strokeColor: "rgba(0,210,0,1)",
+            pointColor: "rgba(0,225,0,1)",
             pointStrokeColor: "#fff",
             pointHighlightFill: "#fff",
-            pointHighlightStroke: "rgba(220,220,220,1)",
-            data: [3650, 2590, 1800, 910, 806]
+            pointHighlightStroke: "rgba(0,225,0,1)",
+            data: [0, 0, 0, 0, 0]
+        },
+        {
+            label: "Pick 3",
+            fillColor: "rgba(151,187,205,0)",
+            strokeColor: "rgba(0,0,210,1)",
+            pointColor: "rgba(0,0,255,1)",
+            pointStrokeColor: "#fff",
+            pointHighlightFill: "#fff",
+            pointHighlightStroke: "rgba(0,0,255,1)",
+            data: [0, 0, 0, 0, 0]
         }
     ]
   };
@@ -42,6 +52,7 @@
     getMakes();
     initCombos(1);
     initCombos(2);
+    initCombos(3);
   }
   function bindEvents(){
     $('.update').on('click', function(){
@@ -89,38 +100,40 @@
 
   function makeSelected(make, comboIndex){
     var comboId = 'model-combobox-'+comboIndex;
-    var dataRef = masterData.makes[make].models;
+    var dataRef = masterData.makes[make];
     clearCombo(comboId);
-    $.each(dataRef, function(modelKey, modelObj) {
-      loadCombo(comboId, dataRef[modelKey].name, modelKey);
+    $.each(dataRef.models, function(modelKey, modelObj) {
+      loadCombo(comboId, dataRef.models[modelKey].name, modelKey);
     });
+    updateGraph(comboIndex, dataRef.depAggs);
   }
   
   function modelSelected(model, comboIndex){
     var comboId = 'year-combobox-'+comboIndex;
     var make = $('#make-combobox-'+comboIndex).val();
     var modelKey = $('#model-combobox-'+comboIndex).attr('data-ref');
-    var dataRef = masterData.makes[make].models[modelKey].years;
+    var dataRef = masterData.makes[make].models[modelKey];
     clearCombo(comboId);
-    $.each(dataRef, function(yearType, yearTypeObj) {
+    $.each(dataRef.years, function(yearType, yearTypeObj) {
       var yearTypeKey = yearType;
       yearType = yearType === 'NEW' ? 'New':'Used';
       $.each(yearTypeObj, function(year, yearObj) {
         loadCombo(comboId, year+"-"+yearType, yearTypeKey);
       });
     });
+    updateGraph(comboIndex, dataRef.depAggs);
   }
   function yearSelected(year, comboIndex){
     var comboId = 'style-combobox-'+comboIndex;
     var make = $('#make-combobox-'+comboIndex).val();
     var modelKey = $('#model-combobox-'+comboIndex).attr('data-ref');
     var yearKey = $('#year-combobox-'+comboIndex).attr('data-ref');
-    var dataRef = masterData.makes[make].models[modelKey].years[yearKey][year.split('-')[0]].styles;
+    var dataRef = masterData.makes[make].models[modelKey].years[yearKey][year.split('-')[0]];
     clearCombo(comboId);
-    $.each(dataRef, function(styleKey, styleObj) {
+    $.each(dataRef.styles, function(styleKey, styleObj) {
       loadCombo(comboId, styleKey);
     });
-    //update graph
+    updateGraph(comboIndex, dataRef.depAggs);
   }
   function styleSelected(styleKey, comboIndex){
     var make = $('#make-combobox-'+comboIndex).val();
@@ -128,7 +141,17 @@
     var yearKey = $('#year-combobox-'+comboIndex).attr('data-ref');
     var year = $('#year-combobox-'+comboIndex).val().split('-')[0];
     var dataRef = masterData.makes[make].models[modelKey].years[yearKey][year].styles[styleKey].tco.depreciation;
-    //update graph
+    updateGraph(comboIndex, dataRef);
+  }
+
+  function updateGraph(index, dataRef) {
+    console.log('updating graph ', dataRef);
+    dataRef.values.every(function(val, i){
+      console.log('looping arr ', val, i);
+      myLineChart.datasets[index-1].points[i].value = val/(dataRef.count || 1);
+      return true;
+    });
+    myLineChart.update();
   }
 
   function getMakes(){
