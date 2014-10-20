@@ -153,7 +153,7 @@
     });
     myLineChart.update();
   }
-
+//TODO use this ID: 7dcf0f0138977274326efa69dc0043c1
   function getMakes(){
     $.get("http://localhost:5984/vehicle-trends/_design/temp/_view/temp")
       .success(function(data){
