@@ -55,14 +55,7 @@
     initCombos(3);
   }
   function bindEvents(){
-    $('.update').on('click', function(){
-      myLineChart.datasets[0].points[2].value = 50;
-      myLineChart.update();
-    });
-    $('.update').on('click', function(){
-      myLineChart.datasets[0].points[2].value = 50;
-      myLineChart.update();
-    });
+    
   }
 
   function initCombos(num){
@@ -102,10 +95,24 @@
     var comboId = 'model-combobox-'+comboIndex;
     var dataRef = masterData.makes[make];
     clearCombo(comboId);
+    clearCombo('year-combobox-'+comboIndex);
+    clearCombo('style-combobox-'+comboIndex);
     $.each(dataRef.models, function(modelKey, modelObj) {
-      loadCombo(comboId, dataRef.models[modelKey].name, modelKey);
+      loadCombo(comboId, cleanModelName(dataRef.models[modelKey].name), modelKey);
     });
     updateGraph(comboIndex, dataRef.depAggs);
+  }
+  
+  function cleanModelName(name) {
+    name = name.replace(' Convertible', '');
+    name = name.replace(' Diesel', '');
+    name = name.replace(' Sedan', '');
+    name = name.replace(' Coupe', '');
+    name = name.replace(' Hybrid', '');
+    name = name.replace(' Wagon', '');
+    name = name.replace(' SUV', '');
+    name = name.replace(' Hatchback', '');
+    return name;
   }
   
   function modelSelected(model, comboIndex){
@@ -114,6 +121,7 @@
     var modelKey = $('#model-combobox-'+comboIndex).attr('data-ref');
     var dataRef = masterData.makes[make].models[modelKey];
     clearCombo(comboId);
+    clearCombo('style-combobox-'+comboIndex);
     $.each(dataRef.years, function(yearType, yearTypeObj) {
       var yearTypeKey = yearType;
       yearType = yearType === 'NEW' ? 'New':'Used';
@@ -157,7 +165,7 @@
   function getMakes(){
     $.get("http://localhost:5984/vehicle-trends/_design/temp/_view/temp")
       .success(function(data){
-        data = JSON.parse(data).rows[1].value; //temp placeholder
+        data = JSON.parse(data).rows[0].value; //temp placeholder
         masterData = data;
         console.log("success", data);
         $.each(data.makes, function(makeName, makeObj) { //loop through each make
@@ -176,6 +184,7 @@
   }
   function clearCombo(id, makeName) {
     $('#'+id).html('');
+    $('#'+id).next().find('input').val('');
   }
 
 })();

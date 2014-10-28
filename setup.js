@@ -14,7 +14,7 @@
   var deDupeMasterCount = 0;
   var deDupeModelMasterCount = 0;
 
-  initQueue();
+  //initQueue();
 
   function initQueue() { 
     queueQuery(allMakesTCO(), function(makeData){
